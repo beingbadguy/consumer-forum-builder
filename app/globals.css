@@ -1,26 +1,120 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --legal-font: 'EB Garamond', 'Times New Roman', Georgia, serif;
+    --sans-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Prevent unwanted iOS tap delay / highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent iOS zoom on input focus by ensuring 16px min font on mobile */
+  input, select, textarea {
+    font-size: 16px;
+  }
+  @media (min-width: 640px) {
+    input, select, textarea {
+      font-size: 0.875rem; /* 14px */
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.font-legal {
+  font-family: var(--legal-font);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Court Document A4 Sheet Styling */
+.legal-a4-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  margin: 0 auto 24px auto;
+  padding: 24mm 20mm 20mm 25mm; /* Left margin wider for filing thread/staple */
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  position: relative;
+  color: #000000;
+  font-family: var(--legal-font);
+  font-size: 14pt;
+  line-height: 1.5;
+  border-radius: 4px;
+}
+
+/* Screen wrapper for preview */
+.preview-viewport {
+  background: #cbd5e1;
+  min-height: 100vh;
+}
+
+/* Legal Table borders */
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #000000;
+}
+
+.legal-table th,
+.legal-table td {
+  border: 1px solid #000000;
+  padding: 5px 8px;
+  font-size: 10.5pt;
+  line-height: 1.35;
+  vertical-align: top;
+}
+
+/* Strict Print Rules */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 20mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt;
+    margin: 0;
+    padding: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .preview-viewport {
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .legal-a4-sheet {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 0 20px 0 !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .legal-a4-sheet:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
 }

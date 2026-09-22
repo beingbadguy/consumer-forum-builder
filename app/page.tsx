@@ -1,69 +1,252 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { ComplaintFormData, FormStep } from './types/complaint';
+import { SAMPLE_FORM_DATA, EMPTY_FORM_DATA } from './lib/initialData';
+import { validateStep } from './lib/validation';
+import { Navbar } from './components/Navbar';
+import { Stepper } from './components/Stepper';
+import { FormControls } from './components/FormControls';
+import { DocumentPreview } from './components/preview/DocumentPreview';
+
+// Step components
+import { Step1ProformaDetails } from './components/steps/Step1ProformaDetails';
+import { Step2SynopsisEvents } from './components/steps/Step2SynopsisEvents';
+import { Step3MemoOfParties } from './components/steps/Step3MemoOfParties';
+import { Step4ComplaintBody } from './components/steps/Step4ComplaintBody';
+import { Step5Prayer } from './components/steps/Step5Prayer';
+import { Step6Verification } from './components/steps/Step6Verification';
+import { Step7Affidavit } from './components/steps/Step7Affidavit';
+import { Step8Annexures } from './components/steps/Step8Annexures';
+
+const STORAGE_KEY = 'consumer_complaint_form_data';
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+  const [formData, setFormData] = useState<ComplaintFormData>(SAMPLE_FORM_DATA);
+  const [currentStep, setCurrentStep] = useState<FormStep>(1);
+  const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
+  const [saveStatus, setSaveStatus] = useState<string>('Saved to localStorage');
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
+  // Load from localStorage on client mount
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setFormData(parsed);
+        setSaveStatus('Restored from localStorage');
+      }
+    } catch (err) {
+      console.warn('Could not read from localStorage:', err);
+    }
+  }, []);
+
+  // Save to localStorage on change
+  useEffect(() => {
+    if (!isMounted) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setSaveStatus(`Saved at ${timeStr}`);
+    } catch (err) {
+      console.warn('Could not write to localStorage:', err);
+      setSaveStatus('Storage full');
+    }
+  }, [formData, isMounted]);
+
+  // Load sample data
+  const handleLoadSample = () => {
+    if (window.confirm('Load sample Consumer Complaint data (Insurance Death Claim proforma)? Any unsaved custom entries will be replaced.')) {
+      setFormData(SAMPLE_FORM_DATA);
+      setStepErrors({});
+      setSaveStatus('Sample data loaded');
+    }
+  };
+
+  // Reset form
+  const handleReset = () => {
+    if (window.confirm('Are you sure you want to clear the entire complaint form?')) {
+      setFormData(EMPTY_FORM_DATA);
+      setStepErrors({});
+      setSaveStatus('Form reset');
+      setCurrentStep(1);
+    }
+  };
+
+  // Navigation handlers
+  const handleNext = () => {
+    const validation = validateStep(currentStep, formData);
+    if (!validation.isValid) {
+      setStepErrors(validation.errors);
+      return;
+    }
+
+    setStepErrors({});
+    if (currentStep === 8) {
+      setIsPreviewMode(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setCurrentStep((prev) => (prev + 1) as FormStep);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePrev = () => {
+    setStepErrors({});
+    if (currentStep > 1) {
+      setCurrentStep((prev) => (prev - 1) as FormStep);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleStepClick = (step: FormStep) => {
+    setStepErrors({});
+    setCurrentStep(step);
+    if (isPreviewMode) {
+      setIsPreviewMode(false);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100">
+        <div className="flex items-center gap-3 text-slate-600 font-medium">
+          <div className="w-5 h-5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+          <span>Loading Legal Proforma Editor...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Full Screen Preview Mode
+  if (isPreviewMode) {
+    return (
+      <main className="min-h-screen bg-slate-200">
+        <Navbar
+          onLoadSample={handleLoadSample}
+          onReset={handleReset}
+          onTogglePreview={() => setIsPreviewMode(false)}
+          isPreviewMode={true}
+          saveStatus={saveStatus}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        <DocumentPreview
+          data={formData}
+          onBackToEdit={() => setIsPreviewMode(false)}
+        />
       </main>
-    </div>
+    );
+  }
+
+  return (
+    <main className="min-h-screen flex flex-col bg-slate-100 pb-32 sm:pb-28">
+      <Navbar
+        onLoadSample={handleLoadSample}
+        onReset={handleReset}
+        onTogglePreview={() => setIsPreviewMode(true)}
+        isPreviewMode={false}
+        saveStatus={saveStatus}
+      />
+
+      <Stepper currentStep={currentStep} onStepClick={handleStepClick} />
+
+      <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 pt-6 flex-1">
+        {/* Step error banner if validation fails */}
+        {Object.keys(stepErrors).length > 0 && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 shadow-xs">
+            <svg
+              className="w-5 h-5 text-red-600 shrink-0 mt-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <div>
+              <h4 className="text-sm font-bold text-red-800">
+                Please complete the required fields in this step
+              </h4>
+              <p className="text-xs text-red-600 mt-0.5">
+                Review the highlighted inputs below before continuing to the next section.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Step Content */}
+        {currentStep === 1 && (
+          <Step1ProformaDetails
+            data={formData}
+            updateData={setFormData}
+            errors={stepErrors}
+          />
+        )}
+        {currentStep === 2 && (
+          <Step2SynopsisEvents
+            data={formData}
+            updateData={setFormData}
+            errors={stepErrors}
+          />
+        )}
+        {currentStep === 3 && (
+          <Step3MemoOfParties
+            data={formData}
+            updateData={setFormData}
+            errors={stepErrors}
+          />
+        )}
+        {currentStep === 4 && (
+          <Step4ComplaintBody
+            data={formData}
+            updateData={setFormData}
+            errors={stepErrors}
+          />
+        )}
+        {currentStep === 5 && (
+          <Step5Prayer
+            data={formData}
+            updateData={setFormData}
+            errors={stepErrors}
+          />
+        )}
+        {currentStep === 6 && (
+          <Step6Verification
+            data={formData}
+            updateData={setFormData}
+            errors={stepErrors}
+          />
+        )}
+        {currentStep === 7 && (
+          <Step7Affidavit
+            data={formData}
+            updateData={setFormData}
+            errors={stepErrors}
+          />
+        )}
+        {currentStep === 8 && (
+          <Step8Annexures
+            data={formData}
+            updateData={setFormData}
+            errors={stepErrors}
+          />
+        )}
+
+        <FormControls
+          currentStep={currentStep}
+          onPrev={handlePrev}
+          onNext={handleNext}
+          onPreview={() => setIsPreviewMode(true)}
+        />
+      </div>
+    </main>
   );
 }
