@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ComplaintFormData, Annexure } from '../../types/complaint';
+import { ComplaintFormData } from '../../types/complaint';
 
 interface StepProps {
   data: ComplaintFormData;

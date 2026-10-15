@@ -16,7 +16,7 @@ export const Step7Affidavit: React.FC<StepProps> = ({
 }) => {
   const primaryComp = data.complainants[0] || { name: '' };
 
-  const handleFieldChange = (field: keyof ComplaintFormData, value: any) => {
+  const handleFieldChange = (field: keyof ComplaintFormData, value: string) => {
     updateData((prev) => ({
       ...prev,
       [field]: value,
@@ -25,7 +25,7 @@ export const Step7Affidavit: React.FC<StepProps> = ({
 
   const handleResetToStandardAffidavit = () => {
     const standard = `1. That I am the complainant in the accompanying consumer complaint and, being fully acquainted with the facts and circumstances of the case, I am competent to swear this affidavit.
-2. That I have read and understood the contents of the accompanying consumer complaint, and the statements made in paragraphs 1 to 6 thereof are true and correct to my personal knowledge, information and belief.
+2. That I have read and understood the contents of the accompanying consumer complaint, and the statements made therein are true and correct to my personal knowledge, information and belief.
 3. That all the annexures annexed with the accompanying complaint are true Xerox copies of their respective originals and are relied upon in support of the present complaint.
 4. That the statements made in the accompanying complaint are true and correct, and nothing material has been concealed or suppressed therefrom.
 5. That this affidavit is being sworn for the purpose of supporting the accompanying consumer complaint and the documents annexed thereto before this Hon'ble Commission.`;

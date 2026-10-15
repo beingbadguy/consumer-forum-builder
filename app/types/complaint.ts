@@ -37,7 +37,9 @@ export interface CaseDetails {
   section: string; // e.g. "Section 35(1)(a)"
   sectionsList: string[]; // ['Section 35(1)(a)', 'Section 35(1)(b)', 'Section 35(1)(c)']
   // Housing specific fields
+  hasHousingProject?: string; // 'N/A' | 'Yes'
   projectName?: string;
+  projectMentionPage?: string;
   refundOrPossession?: string;
   pendingHousingComplaints?: string;
   // Proforma legal fields
@@ -45,6 +47,8 @@ export interface CaseDetails {
   dateOfCauseOfAction: string;
   stateOfCauseOfAction: string;
   districtOfCauseOfAction: string;
+  hasDelay?: string; // 'No' | 'Yes'
+  delayDays?: string;
   limitationDelay: string;
   condonationApplicationAttached: string;
   documentsAttestedTrueCopies: string;

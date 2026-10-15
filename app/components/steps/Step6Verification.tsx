@@ -16,7 +16,7 @@ export const Step6Verification: React.FC<StepProps> = ({
 }) => {
   const primaryComp = data.complainants[0] || { name: '' };
 
-  const handleFieldChange = (field: keyof ComplaintFormData, value: any) => {
+  const handleFieldChange = (field: keyof ComplaintFormData, value: string) => {
     updateData((prev) => ({
       ...prev,
       [field]: value,
@@ -74,7 +74,7 @@ export const Step6Verification: React.FC<StepProps> = ({
         <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs leading-relaxed text-slate-700">
           <div className="font-bold text-slate-900 uppercase">Court Verification Standard Format:</div>
           <p className="italic font-serif text-[13px] text-slate-800">
-            "I, <strong>{primaryComp.name || 'Complainant Name'}</strong>, the above-named complainant, do hereby verify that the statements made in the accompanying complaint are true and correct to my personal knowledge, information and belief and the records of the case, and that nothing material has been concealed or suppressed therefrom."
+            &ldquo;I, <strong>{primaryComp.name || 'Complainant Name'}</strong>, the above-named complainant, do hereby verify that the statements made in the accompanying complaint are true and correct to my personal knowledge, information and belief and the records of the case, and that nothing material has been concealed or suppressed therefrom.&rdquo;
           </p>
           <div className="pt-2 text-[11px] text-slate-500">
             Signatures: Complainant and Advocate will appear right-aligned at the bottom of Page 8.

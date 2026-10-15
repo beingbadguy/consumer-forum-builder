@@ -50,7 +50,7 @@ export const Step2SynopsisEvents: React.FC<StepProps> = ({
               Chronological List of Dates and Events
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Renders the tabular "Date of Events" section on Page 3 of the court document.
+              Renders the tabular &ldquo;Date of Events&rdquo; section on Page 3 of the court document.
             </p>
           </div>
 

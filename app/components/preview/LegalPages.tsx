@@ -1,12 +1,32 @@
 'use client';
 
 import React from 'react';
-import { ComplaintFormData } from '../../types/complaint';
+import { ComplaintFormData, OppositeParty } from '../../types/complaint';
 
 interface LegalPagesProps {
   data: ComplaintFormData;
   pageFilter?: number | null; // null means show all pages
 }
+
+function toRoman(num: number): string {
+  const romanLookup: [number, string][] = [
+    [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']
+  ];
+  let result = '';
+  for (const [val, sym] of romanLookup) {
+    while (num >= val) {
+      result += sym;
+      num -= val;
+    }
+  }
+  return result;
+}
+
+const opSuffix = (ops: OppositeParty[]) => {
+  if (ops.length <= 1) return '';
+  if (ops.length === 2) return ' & Another';
+  return ' & Others';
+};
 
 export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
   const cd = data.caseDetails;
@@ -31,8 +51,6 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
     through: '',
     address: '',
   };
-
-  const secondaryOp = data.oppositeParties[1];
 
   // Helper to format blank or value
   const fill = (val?: string, blankCount = 20) => {
@@ -154,10 +172,17 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
                   Project Name (relates to a housing category) (Indicate page no. where mentioned)
                 </td>
                 <td className="w-1/2">
-                  {cd.category === 'Housing' || cd.projectName ? (
-                    cd.projectName || '—'
+                  {cd.hasHousingProject === 'Yes' || cd.category === 'Housing' || cd.projectName ? (
+                    <span>
+                      {cd.projectName || fill(undefined, 25)}
+                      {cd.projectMentionPage && (
+                        <span className="text-[10pt] text-slate-700 block">
+                          (Page No: {cd.projectMentionPage})
+                        </span>
+                      )}
+                    </span>
                   ) : (
-                    <span className="text-slate-500 italic">N/A (Not Housing dispute)</span>
+                    <span className="text-slate-600">N/A (Not Housing dispute)</span>
                   )}
                 </td>
               </tr>
@@ -166,7 +191,9 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
                   For Refund/Possession/ return of principal amount/interest. (relates to a housing category)
                 </td>
                 <td className="w-1/2">
-                  {cd.refundOrPossession || (cd.category === 'Housing' ? 'Refund & Compensation' : 'N/A')}
+                  {cd.hasHousingProject === 'Yes' || cd.category === 'Housing'
+                    ? cd.refundOrPossession || fill(undefined, 25)
+                    : 'N/A'}
                 </td>
               </tr>
               <tr>
@@ -220,7 +247,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
                   Delay, if any, computing the period of limitation, from the date of cause of action.
                 </td>
                 <td className="w-1/2">
-                  {cd.limitationDelay || 'No delay. Filed within limitation.'}
+                  {cd.limitationDelay || (cd.hasDelay === 'Yes' ? 'Yes, delay occurred. Application for condonation of delay filed.' : 'No delay. Complaint filed within the statutory limitation period under Section 69.')}
                 </td>
               </tr>
             </tbody>
@@ -245,7 +272,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
                   In case of any delay, whether any application for condonation of delay in filing the Consumer Complaint is filed, is attached, with Notarised affidavit.
                 </td>
                 <td className="w-1/2">
-                  {cd.condonationApplicationAttached || 'No (Complaint is well within limitation period)'}
+                  {cd.condonationApplicationAttached || (cd.hasDelay === 'Yes' ? 'Yes (Attached with Notarised affidavit)' : 'N/A')}
                 </td>
               </tr>
               <tr>
@@ -256,7 +283,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
                 <td className="w-1/2 font-bold">
                   Whether English translations of all the documents in vernacular, are filed?
                 </td>
-                <td className="w-1/2">{cd.englishTranslationsFiled || 'Yes / Not Applicable'}</td>
+                <td className="w-1/2">{cd.englishTranslationsFiled || 'N/A'}</td>
               </tr>
               <tr>
                 <td className="w-1/2 font-bold">
@@ -306,7 +333,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
         <div className="legal-a4-sheet" id="legal-page-3">
           <div className="text-[12pt]">Before,</div>
           <div className="pl-14 mt-4 text-[12.5pt] leading-snug">
-            <div>The Court of learned President & Members,</div>
+            <div>The Court of learned President &amp; Members,</div>
             <div>{cd.commissionName || 'District Consumer Dispute Redressal Commission'},</div>
             <div>{cd.commissionPlace ? `${cd.commissionPlace}.` : '________________________.'}</div>
           </div>
@@ -328,7 +355,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
           <div className="flex justify-between items-baseline text-[12pt]">
             <div className="border-b border-black flex-1 mr-2 font-semibold">
               {primaryOp.name || '_______________________________________________'}
-              {secondaryOp ? ' & Another' : ''}
+              {opSuffix(data.oppositeParties)}
             </div>
             <div className="font-bold whitespace-nowrap">...............O.Ps.</div>
           </div>
@@ -350,17 +377,17 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
                 <>
                   <tr>
                     <td className="w-12 text-center">1.</td>
-                    <td>Policy commencement / risk coverage date</td>
+                    <td>Event description / Commencement date</td>
                     <td className="w-40"></td>
                   </tr>
                   <tr>
                     <td className="w-12 text-center">2.</td>
-                    <td>Date of death of L.A.</td>
+                    <td>Date on which grievance / cause of action arose</td>
                     <td className="w-40"></td>
                   </tr>
                   <tr>
                     <td className="w-12 text-center">3.</td>
-                    <td>Date on which claim was repudiated</td>
+                    <td>Legal notice / communication date</td>
                     <td className="w-40"></td>
                   </tr>
                 </>
@@ -383,7 +410,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
         <div className="legal-a4-sheet" id="legal-page-4">
           <div className="text-[12pt]">In,</div>
           <div className="pl-14 mt-4 text-[12.5pt] leading-snug">
-            <div>The Court of learned President & Member,</div>
+            <div>The Court of learned President &amp; Member,</div>
             <div>{cd.commissionName || 'District Consumer Dispute Redressal Commission'},</div>
             <div>{cd.commissionPlace ? `${cd.commissionPlace}.` : '________________________.'}</div>
           </div>
@@ -410,7 +437,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
                   Pin Code {fill(c.pinCode, 10)} at present {fill(c.presentAddress || c.village, 25)}
                 </div>
                 <div className="mt-1">
-                  P.O.- {fill(c.po, 10)}, P.S.- {fill(c.ps, 10)}, District – {fill(c.district, 20)}
+                  P.O.- {fill(c.po, 10)}, P.S.- {fill(c.ps, 10)}, District – {fill(c.district, 20)}{c.state ? `, ${c.state}` : ''}
                 </div>
                 <div className="text-right font-bold text-[12pt] mt-2">
                   .......................... Complainant{data.complainants.length > 1 ? ` No. ${i + 1}` : ''}
@@ -419,12 +446,12 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
             ))}
           </div>
 
-          {/* Opposite parties list */}
+          {/* Opposite parties list (Formatted with Roman Numerals (i), (ii), (iii)...) */}
           <div className="mt-10 space-y-6">
             {data.oppositeParties.map((op, i) => (
               <div key={i} className="text-[12pt] leading-relaxed">
                 <div className="font-semibold">
-                  ({String.fromCharCode(105 + i)}) {fill(op.name, 40)}
+                  ({toRoman(i + 1)}) {fill(op.name, 40)}
                 </div>
                 <div className="mt-1 pl-6">
                   through its {fill(op.through || 'Authorized Signatory', 25)}, situated at
@@ -458,41 +485,44 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
             Complaint under Section 35 of the Consumer Protection Act, 2019
           </div>
 
+          {/* Complainant Header */}
           <div className="mt-5 text-[11.5pt] leading-relaxed text-justify">
-            {fill(primaryComplainant.name, 35)}, wife/son/daughter of {fill(primaryComplainant.parentName, 20)}, Permanent resident of Village - {fill(primaryComplainant.village, 20)}, P.O. - {fill(primaryComplainant.po, 10)}, P.S. - {fill(primaryComplainant.ps, 10)}, District - {fill(primaryComplainant.district, 20)}; at present residing at {fill(primaryComplainant.presentAddress || primaryComplainant.village, 20)}, P.O. - {fill(primaryComplainant.po, 10)}, P.S. - {fill(primaryComplainant.ps, 10)}, District - {fill(primaryComplainant.district, 20)}.
+            {fill(primaryComplainant.name, 35)}, {primaryComplainant.relationType || 'wife/son/daughter of'} {fill(primaryComplainant.parentName, 20)}, Permanent resident of Village - {fill(primaryComplainant.village, 20)}, P.O. - {fill(primaryComplainant.po, 10)}, P.S. - {fill(primaryComplainant.ps, 10)}, District - {fill(primaryComplainant.district, 20)}; at present residing at {fill(primaryComplainant.presentAddress || primaryComplainant.village, 20)}, P.O. - {fill(primaryComplainant.po, 10)}, P.S. - {fill(primaryComplainant.ps, 10)}, District - {fill(primaryComplainant.district, 20)}.
           </div>
           <div className="text-right font-bold text-[11.5pt] mt-1">...........Complainant</div>
 
           <div className="text-center font-bold text-[12pt] my-3">VERSUS</div>
 
-          <div className="text-[11.5pt] leading-relaxed">
-            <div className="font-bold">1. {fill(primaryOp.name, 40)}</div>
-            <div className="pl-4 mt-0.5">Through its {fill(primaryOp.through || 'its Branch Manager', 25)}, Situated at {fill(primaryOp.address, 35)}</div>
-            <div className="text-right font-bold text-[11.5pt] mt-0.5">.........Opposite Party No. 1</div>
+          {/* CRITICAL FIX: Render ALL Opposite Parties in complaint petition (Resolves 'Memo of partie मे 3 number party Add किये तो नही आया') */}
+          <div className="space-y-3">
+            {data.oppositeParties.map((op, idx) => (
+              <div key={idx} className="text-[11.5pt] leading-relaxed">
+                <div className="font-bold">{idx + 1}. {fill(op.name, 40)}</div>
+                <div className="pl-4 mt-0.5">
+                  Through its {fill(op.through || 'Authorized Signatory', 25)}, Situated at {fill(op.address, 35)}
+                </div>
+                <div className="text-right font-bold text-[11.5pt] mt-0.5">
+                  .........Opposite Party No. {idx + 1}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {secondaryOp && (
-            <div className="text-[11.5pt] leading-relaxed mt-3">
-              <div className="font-bold">2. {fill(secondaryOp.name, 40)}</div>
-              <div className="pl-4 mt-0.5">Through its {fill(secondaryOp.through || 'its Managing Director', 25)}, {fill(secondaryOp.address, 35)}</div>
-              <div className="text-right font-bold text-[11.5pt] mt-0.5">.........Opposite Party No. 2</div>
-            </div>
-          )}
-
           <div className="mt-5 text-[11.5pt] leading-relaxed">
+            {/* GENERALIZED: Consideration amount heading without hardcoded life insurance terms */}
             <div className="font-bold uppercase underline">
-              1. CONSIDERATION AMOUNT PAID BY THE LIFE ASSURED TO THE OPPOSITE PARTIES FOR THE PURPOSE OF ASSESSING COURT FEES:-
+              1. CONSIDERATION AMOUNT PAID FOR THE PURPOSE OF ASSESSING COURT FEES:-
             </div>
             <div className="mt-1">
               Rs. {fill(cd.totalConsideration, 12)}/- (Rupees {fill(cd.totalConsiderationWords, 25)} only).
             </div>
 
             <div className="mt-3">
-              <span className="font-bold">2. Claimed Amount:-</span> Rs. {fill(cd.claimedAmount, 12)}/- (Rupees {fill(cd.claimedAmountWords, 25)} only), together with interest @ {fill(cd.interestRate, 4)}% per annum from the date of {fill(cd.interestFromDate || cd.dateOfCauseOfAction, 15)}, i.e., {fill(cd.interestFromDate || cd.dateOfCauseOfAction, 12)}, till the date of actual payment.
+              <span className="font-bold">2. Claimed Amount:-</span> Rs. {fill(cd.claimedAmount, 12)}/- (Rupees {fill(cd.claimedAmountWords, 25)} only), together with interest @ {fill(cd.interestRate, 4)}% per annum from the date of {fill(cd.interestFromDate || cd.dateOfCauseOfAction || 'filing of this complaint', 15)}, i.e., {fill(cd.interestFromDate || cd.dateOfCauseOfAction || 'filing of complaint', 12)}, till the date of actual payment.
             </div>
 
             <div className="mt-3">
-              <span className="font-bold">3. EVIDENCE & WITNESSES: -</span> As stated below and as per the documents annexed herewith.
+              <span className="font-bold">3. EVIDENCE &amp; WITNESSES: -</span> As stated below and as per the documents annexed herewith.
             </div>
 
             <div className="mt-2 pl-4 space-y-1">
@@ -540,7 +570,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
           <div className="mt-6 text-[12pt]">
             <div className="font-bold uppercase underline">WITNESSES IN FAVOUR OF THE COMPLAINANT:-</div>
             <div className="mt-2 pl-4 space-y-1 font-semibold">
-              <div>The Complainant herself.</div>
+              <div>The Complainant herself/himself.</div>
               <div>Other independent witness(es), if any.</div>
             </div>
           </div>
@@ -559,10 +589,11 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
                 </div>
               ))
             ) : (
-              <div className="space-y-3 text-slate-500 italic">
-                <p>1. That the Complainant is a consumer under Section 2(7) of the Consumer Protection Act, 2019...</p>
-                <p>2. That the Opposite Parties committed gross deficiency in service and unfair trade practice...</p>
-                <p>3. That cause of action arose on dates stated in List of Dates and Events...</p>
+              <div className="space-y-3 text-slate-800">
+                <p className="indent-8">1. That the Complainant is a consumer within the meaning of Section 2(7) of the Consumer Protection Act, 2019, having paid valuable consideration to the Opposite Parties for goods/services.</p>
+                <p className="indent-8">2. That the Opposite Parties committed gross deficiency in service under Section 2(11) and unfair trade practice under Section 2(47) of the Act by failing to honor their contractual obligations.</p>
+                <p className="indent-8">3. That the cause of action first arose on dates specified in the List of Dates and Events and the complaint is filed within the limitation period under Section 69.</p>
+                <p className="indent-8">4. That this Hon&apos;ble Commission has full territorial and pecuniary jurisdiction to entertain, try, and adjudicate upon the present complaint.</p>
               </div>
             )}
           </div>
@@ -578,31 +609,37 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
           </div>
 
           <div className="text-[12pt] text-justify leading-relaxed">
-            It is, therefore, most respectfully prayed that this Hon'ble District Consumer Disputes Redressal Commission may graciously be pleased to:
+            It is, therefore, most respectfully prayed that this Hon&apos;ble District Consumer Disputes Redressal Commission may graciously be pleased to:
           </div>
 
-          {/* Structured prayer items */}
-          <div className="mt-4 space-y-4 text-[12pt] text-justify leading-relaxed">
-            <div className="pl-2">
-              <span className="font-bold">(i) </span>
-              Direct the Opposite Parties, jointly and severally, to honour the insurance contract and pay to the complainant the Death Claim amount of Rs. {fill(data.prayerClaims?.claimAmount || cd.claimedAmount, 12)}/- (Rupees {fill(data.prayerClaims?.claimAmountWords || cd.claimedAmountWords, 25)} only) payable under Policy No. {fill(data.prayerClaims?.policyNo || '23891044', 15)}, together with interest @ {fill(data.prayerClaims?.interestRate || cd.interestRate, 4)}% per annum from the date of death of the Life Assured, i.e., {fill(data.prayerClaims?.interestFromDate || cd.interestFromDate, 12)}, till the date of actual payment, along with all consequential contractual benefits admissible under the policy.
+          {/* Render Custom Prayer if provided, otherwise standard generalized court prayer clauses */}
+          {data.prayer && data.prayer.trim().length > 0 ? (
+            <div className="mt-4 text-[12pt] text-justify leading-relaxed whitespace-pre-line">
+              {data.prayer}
             </div>
+          ) : (
+            <div className="mt-4 space-y-4 text-[12pt] text-justify leading-relaxed">
+              <div className="pl-2">
+                <span className="font-bold">(i) </span>
+                Direct the Opposite Parties, jointly and severally, to pay to the complainant the claimed / refund amount of Rs. {fill(data.prayerClaims?.claimAmount || cd.claimedAmount, 12)}/- (Rupees {fill(data.prayerClaims?.claimAmountWords || cd.claimedAmountWords, 25)} only) {data.prayerClaims?.policyNo ? `payable under Policy / Account / Order No. ${data.prayerClaims.policyNo}` : ''}, together with interest @ {fill(data.prayerClaims?.interestRate || cd.interestRate, 4)}% per annum from the date of {fill(data.prayerClaims?.interestFromDate || cd.interestFromDate || 'filing of this complaint', 12)}, till the date of actual payment.
+              </div>
 
-            <div className="pl-2">
-              <span className="font-bold">(ii) </span>
-              Direct the Opposite Parties, jointly and severally, to pay a sum of Rs. {fill(data.prayerClaims?.compensationAmount || '3,00,000', 12)}/- (Rupees {fill(data.prayerClaims?.compensationAmountWords || 'Three Lakh', 20)} only) to the complainant as compensation for the immense mental agony, physical harassment, financial hardship and emotional trauma suffered by her/him due to the illegal repudiation of the genuine insurance claim, together with interest @ {fill(data.prayerClaims?.interestRate || cd.interestRate, 4)}% per annum from the date of death of the Life Assured, i.e., {fill(data.prayerClaims?.interestFromDate || cd.interestFromDate, 12)}, till the date of actual payment.
-            </div>
+              <div className="pl-2">
+                <span className="font-bold">(ii) </span>
+                Direct the Opposite Parties, jointly and severally, to pay a sum of Rs. {fill(data.prayerClaims?.compensationAmount || '3,00,000', 12)}/- (Rupees {fill(data.prayerClaims?.compensationAmountWords || 'Three Lakh', 20)} only) to the complainant as compensation for the immense mental agony, physical harassment, financial hardship and emotional trauma suffered due to deficiency in service and unfair trade practice, together with interest @ {fill(data.prayerClaims?.interestRate || cd.interestRate, 4)}% per annum from the date of filing of this complaint, till the date of actual payment.
+              </div>
 
-            <div className="pl-2">
-              <span className="font-bold">(iii) </span>
-              Direct the Opposite Parties to pay Rs. {fill(data.prayerClaims?.litigationCosts || '50,000', 10)}/- (Rupees {fill(data.prayerClaims?.litigationCostsWords || 'Fifty Thousand', 20)} only) towards litigation expenses and incidental costs incurred by the complainant.
-            </div>
+              <div className="pl-2">
+                <span className="font-bold">(iii) </span>
+                Direct the Opposite Parties to pay Rs. {fill(data.prayerClaims?.litigationCosts || '50,000', 10)}/- (Rupees {fill(data.prayerClaims?.litigationCostsWords || 'Fifty Thousand', 20)} only) towards litigation expenses and incidental costs incurred by the complainant.
+              </div>
 
-            <div className="pl-2">
-              <span className="font-bold">(iv) </span>
-              Pass any other or further order(s), direction(s) or relief(s) as this Hon'ble Commission may deem fit and proper in the facts and circumstances of the case.
+              <div className="pl-2">
+                <span className="font-bold">(iv) </span>
+                Pass any other or further order(s), direction(s) or relief(s) as this Hon&apos;ble Commission may deem fit and proper in the facts and circumstances of the case.
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="mt-10 font-bold text-center text-[12pt] tracking-wide">
             <div>AND FOR THIS ACT OF KINDNESS, THE COMPLAINANT AS</div>
@@ -634,7 +671,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
           </div>
 
           <div className="text-justify text-[12pt] leading-relaxed">
-            I, {fill(primaryComplainant.name, 35)}, wife/son/daughter of {fill(primaryComplainant.parentName, 20)}, resident of Village {fill(primaryComplainant.village, 18)}, P.O. {fill(primaryComplainant.po, 10)}, P.S. {fill(primaryComplainant.ps, 10)}, District {fill(primaryComplainant.district, 18)}, at present {fill(primaryComplainant.presentAddress || primaryComplainant.village, 20)}, P.O. {fill(primaryComplainant.po, 10)}, P.S. {fill(primaryComplainant.ps, 10)}, District {fill(primaryComplainant.district, 18)}, the above-named complainant, do hereby verify that the statements made in paragraphs 1 to {paraCount} of the accompanying complaint are true and correct to my personal knowledge, information and belief and the records of the case, and that nothing material has been concealed or suppressed therefrom.
+            I, {fill(primaryComplainant.name, 35)}, {primaryComplainant.relationType || 'wife/son/daughter of'} {fill(primaryComplainant.parentName, 20)}, resident of Village {fill(primaryComplainant.village, 18)}, P.O. {fill(primaryComplainant.po, 10)}, P.S. {fill(primaryComplainant.ps, 10)}, District {fill(primaryComplainant.district, 18)}, at present {fill(primaryComplainant.presentAddress || primaryComplainant.village, 20)}, P.O. {fill(primaryComplainant.po, 10)}, P.S. {fill(primaryComplainant.ps, 10)}, District {fill(primaryComplainant.district, 18)}, the above-named complainant, do hereby verify that the statements made in paragraphs 1 to {paraCount} of the accompanying complaint are true and correct to my personal knowledge, information and belief and the records of the case, and that nothing material has been concealed or suppressed therefrom.
           </div>
 
           <div className="mt-8 text-[12pt]">
@@ -674,7 +711,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
           <div className="text-center font-bold text-[12pt] my-2">Versus</div>
 
           <div className="flex justify-between items-baseline text-[12pt]">
-            <div className="font-semibold">{fill(primaryOp.name, 25)} & Another</div>
+            <div className="font-semibold">{fill(primaryOp.name, 25)}{opSuffix(data.oppositeParties)}</div>
             <div className="font-bold">..................... O.Ps</div>
           </div>
 
@@ -683,7 +720,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
           </div>
 
           <div className="text-justify text-[12pt] leading-relaxed">
-            I, {fill(primaryComplainant.name, 35)}, wife/son/daughter of {fill(primaryComplainant.parentName, 20)}, resident of Village {fill(primaryComplainant.village, 18)}, P.O. {fill(primaryComplainant.po, 10)}, P.S. {fill(primaryComplainant.ps, 10)}, District {fill(primaryComplainant.district, 18)}, at present {fill(primaryComplainant.presentAddress || primaryComplainant.village, 20)}, P.O. {fill(primaryComplainant.po, 10)}, P.S. {fill(primaryComplainant.ps, 10)}, District {fill(primaryComplainant.district, 18)}, the above-named complainant, do hereby solemnly affirm and state on oath as follows:
+            I, {fill(primaryComplainant.name, 35)}, {primaryComplainant.relationType || 'wife/son/daughter of'} {fill(primaryComplainant.parentName, 20)}, resident of Village {fill(primaryComplainant.village, 18)}, P.O. {fill(primaryComplainant.po, 10)}, P.S. {fill(primaryComplainant.ps, 10)}, District {fill(primaryComplainant.district, 18)}, at present {fill(primaryComplainant.presentAddress || primaryComplainant.village, 20)}, P.O. {fill(primaryComplainant.po, 10)}, P.S. {fill(primaryComplainant.ps, 10)}, District {fill(primaryComplainant.district, 18)}, the above-named complainant, do hereby solemnly affirm and state on oath as follows:
           </div>
 
           <div className="mt-4 space-y-3 text-[12pt] text-justify leading-relaxed">
@@ -705,7 +742,7 @@ export const LegalPages: React.FC<LegalPagesProps> = ({ data, pageFilter }) => {
             </div>
             <div>
               <span className="font-bold">5. </span>
-              That this affidavit is being sworn for the purpose of supporting the accompanying consumer complaint and the documents annexed thereto before this Hon'ble Commission.
+              That this affidavit is being sworn for the purpose of supporting the accompanying consumer complaint and the documents annexed thereto before this Hon&apos;ble Commission.
             </div>
           </div>
 

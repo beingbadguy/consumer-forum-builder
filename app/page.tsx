@@ -31,17 +31,20 @@ export default function Home() {
 
   // Load from localStorage on client mount
   useEffect(() => {
-    setIsMounted(true);
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setFormData(parsed);
-        setSaveStatus('Restored from localStorage');
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setFormData(parsed);
+          setSaveStatus('Restored from localStorage');
+        }
+      } catch (err) {
+        console.warn('Could not read from localStorage:', err);
       }
-    } catch (err) {
-      console.warn('Could not read from localStorage:', err);
-    }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Save to localStorage on change
@@ -51,10 +54,16 @@ export default function Home() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
       const now = new Date();
       const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      setSaveStatus(`Saved at ${timeStr}`);
+      const timer = setTimeout(() => {
+        setSaveStatus(`Saved at ${timeStr}`);
+      }, 0);
+      return () => clearTimeout(timer);
     } catch (err) {
       console.warn('Could not write to localStorage:', err);
-      setSaveStatus('Storage full');
+      const timer = setTimeout(() => {
+        setSaveStatus('Storage full');
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [formData, isMounted]);
 

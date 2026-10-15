@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ComplaintFormData } from '../../types/complaint';
 import { LegalPages } from './LegalPages';
 import { exportToPdf, printDocument } from '../../lib/pdfExport';
@@ -15,22 +15,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({
   onBackToEdit,
 }) => {
   const [selectedPage, setSelectedPage] = useState<number | null>(null); // null = all 9 pages
-  const [zoomLevel, setZoomLevel] = useState<number>(100);
-  const [isExporting, setIsExporting] = useState<boolean>(false);
-  const [isFitToScreen, setIsFitToScreen] = useState<boolean>(false);
-
-  // Auto detect mobile and fit on initial mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const screenWidth = window.innerWidth;
-      if (screenWidth < 840) {
-        // A4 is ~794px (210mm). Calculate ratio
-        const fitScale = Math.round(((screenWidth - 24) / 794) * 100);
-        setZoomLevel(Math.max(40, fitScale));
-        setIsFitToScreen(true);
-      }
+  const [zoomLevel, setZoomLevel] = useState<number>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 840) {
+      const fitScale = Math.round(((window.innerWidth - 24) / 794) * 100);
+      return Math.max(40, fitScale);
     }
-  }, []);
+    return 100;
+  });
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isFitToScreen, setIsFitToScreen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 840;
+    }
+    return false;
+  });
 
   const toggleFitToScreen = () => {
     if (isFitToScreen) {

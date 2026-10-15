@@ -61,12 +61,12 @@ export function convertNumberToIndianWords(numStr: string | number): string {
     return res.trim();
   }
 
-  let crore = Math.floor(num / 10000000);
+  const crore = Math.floor(num / 10000000);
   let remainder = num % 10000000;
-  let lakh = Math.floor(remainder / 100000);
+  const lakh = Math.floor(remainder / 100000);
   remainder = remainder % 100000;
-  let thousand = Math.floor(remainder / 1000);
-  let hundredPart = remainder % 1000;
+  const thousand = Math.floor(remainder / 1000);
+  const hundredPart = remainder % 1000;
 
   const parts: string[] = [];
   if (crore > 0) {

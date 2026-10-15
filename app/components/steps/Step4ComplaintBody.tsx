@@ -22,23 +22,27 @@ export const Step4ComplaintBody: React.FC<StepProps> = ({
   };
 
   const handleGenerateTemplate = () => {
-    const comp = data.complainants[0] || { name: 'Complainant' };
-    const op = data.oppositeParties[0] || { name: 'Opposite Party' };
+    const comp = data.complainants[0] || { name: 'the Complainant' };
+    const op = data.oppositeParties[0] || { name: 'the Opposite Party' };
     const cd = data.caseDetails;
 
-    const draft = `1. That the Complainant is a consumer within the meaning of Section 2(7) of the Consumer Protection Act, 2019, having paid consideration to the Opposite Parties for goods/services.
+    const draft = `1. That the Complainant (${comp.name}) is a consumer within the meaning of Section 2(7) of the Consumer Protection Act, 2019, having paid valuable consideration to the Opposite Parties for goods/services.
 
-2. That the Opposite Party No. 1 is carrying on business as an authorized entity, and Opposite Party No. 2 is the registered corporate headquarters having overall operational and administrative control.
+2. That the Opposite Party (${op.name}) is carrying on business within the territorial jurisdiction of this Hon'ble Commission and is responsible for rendering proper service to consumers.
 
-3. That the Complainant paid total consideration amounting to Rs. ${cd.totalConsideration || '1,20,000'}/- (Rupees ${cd.totalConsiderationWords || 'One Lakh Twenty Thousand'} only) to the Opposite Parties.
+3. That the Complainant paid total consideration amounting to Rs. ${cd.totalConsideration || '____'}/- (${cd.totalConsiderationWords ? 'Rupees ' + cd.totalConsiderationWords + ' only' : 'as specified'}) to the Opposite Parties.
 
-4. That the Opposite Parties committed gross deficiency in service and unfair trade practice under Section 2(11) and Section 2(47) of the Act by failing to honor their contractual obligations, causing severe financial loss and mental harassment.
+4. That the Opposite Parties committed gross deficiency in service under Section 2(11) and unfair trade practice under Section 2(47) of the Act by failing to honor their contractual obligations, causing severe financial loss, physical harassment, and mental agony to the Complainant.
 
-5. That the cause of action first arose on ${cd.dateOfCauseOfAction || '14/09/2023'} and continues to subsist. The complaint is filed well within the 2-year limitation period prescribed under Section 69 of the Consumer Protection Act, 2019.
+5. That the cause of action first arose on ${cd.dateOfCauseOfAction || 'the specified date'} and continues to subsist. The complaint is filed well within the 2-year limitation period prescribed under Section 69 of the Consumer Protection Act, 2019.
 
-6. That this Hon'ble Commission has full territorial and pecuniary jurisdiction to entertain, try, and adjudicate upon the present complaint.`;
+6. That this Hon'ble Commission has full territorial and pecuniary jurisdiction to entertain, try, and adjudicate upon the present consumer dispute.`;
 
     handleBodyChange(draft);
+  };
+
+  const handleMakeBlank = () => {
+    handleBodyChange('');
   };
 
   return (
@@ -57,13 +61,23 @@ export const Step4ComplaintBody: React.FC<StepProps> = ({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleGenerateTemplate}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300 rounded-xl hover:bg-amber-100 transition-colors shadow-sm"
-          >
-            ⚡ Auto-Draft Standard Legal Text
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleMakeBlank}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-300 rounded-xl hover:bg-slate-200 transition-colors shadow-sm"
+              title="Clear text to enter custom facts or leave blank"
+            >
+              🧹 Clear / Make Blank
+            </button>
+            <button
+              type="button"
+              onClick={handleGenerateTemplate}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300 rounded-xl hover:bg-amber-100 transition-colors shadow-sm"
+            >
+              ⚡ Auto-Draft Standard Legal Text
+            </button>
+          </div>
         </div>
 
         {errors.complaintBody && (

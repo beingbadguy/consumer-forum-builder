@@ -1,6 +1,12 @@
+interface Html2PdfInstance {
+  set: (opt: Record<string, unknown>) => Html2PdfInstance;
+  from: (element: HTMLElement) => Html2PdfInstance;
+  save: () => Promise<void>;
+}
+
 declare global {
   interface Window {
-    html2pdf?: any;
+    html2pdf?: () => Html2PdfInstance;
   }
 }
 

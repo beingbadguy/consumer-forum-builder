@@ -9,6 +9,20 @@ interface StepProps {
   errors: Record<string, string>;
 }
 
+function toRoman(num: number): string {
+  const romanLookup: [number, string][] = [
+    [10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']
+  ];
+  let result = '';
+  for (const [val, sym] of romanLookup) {
+    while (num >= val) {
+      result += sym;
+      num -= val;
+    }
+  }
+  return result;
+}
+
 export const Step3MemoOfParties: React.FC<StepProps> = ({
   data,
   updateData,
@@ -39,6 +53,21 @@ export const Step3MemoOfParties: React.FC<StepProps> = ({
       nextList[index] = comp;
       return { ...prev, complainants: nextList };
     });
+  };
+
+  const handleSyncPermanentToPresent = (index: number) => {
+    const comp = data.complainants[index];
+    if (!comp) return;
+    const permStr = [
+      comp.village ? `Vill: ${comp.village}` : '',
+      comp.po ? `P.O.: ${comp.po}` : '',
+      comp.ps ? `P.S.: ${comp.ps}` : '',
+      comp.district ? `District: ${comp.district}` : '',
+      comp.state || '',
+      comp.pinCode ? `PIN: ${comp.pinCode}` : '',
+    ].filter(Boolean).join(', ');
+
+    handleComplainantChange(index, 'presentAddress', permStr || comp.village);
   };
 
   const handleAddComplainant = () => {
@@ -257,12 +286,21 @@ export const Step3MemoOfParties: React.FC<StepProps> = ({
                 </div>
               </div>
 
-              {/* Present Address & District */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Present Address & District / State */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div className="sm:col-span-2">
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                    At Present Village / Mohalla / City Address
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-medium text-slate-600">
+                      At Present Village / Mohalla / City Address
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleSyncPermanentToPresent(idx)}
+                      className="text-[11px] text-amber-700 hover:text-amber-800 font-semibold underline"
+                    >
+                      Same as Permanent
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={comp.presentAddress || ''}
@@ -278,7 +316,17 @@ export const Step3MemoOfParties: React.FC<StepProps> = ({
                     value={comp.district}
                     onChange={(e) => handleComplainantChange(idx, 'district', e.target.value)}
                     className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white"
-                    placeholder="e.g. Patna"
+                    placeholder="e.g. Muzaffarpur or Patna"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">State</label>
+                  <input
+                    type="text"
+                    value={comp.state}
+                    onChange={(e) => handleComplainantChange(idx, 'state', e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white"
+                    placeholder="e.g. Bihar"
                   />
                 </div>
               </div>
@@ -363,7 +411,7 @@ export const Step3MemoOfParties: React.FC<StepProps> = ({
             >
               <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                 <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Opposite Party #{idx + 1} ({String.fromCharCode(105 + idx)})
+                  Opposite Party #{idx + 1} ({toRoman(idx + 1)})
                 </span>
 
                 {data.oppositeParties.length > 1 && (

@@ -31,6 +31,86 @@ const SECTIONS = [
   { id: 'Section 35(I) (c)', label: 'Section 35(1)(c) - One or more consumers on behalf of numerous consumers (Class Action)' },
 ];
 
+const INDIAN_STATES = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
+];
+
+const BIHAR_DISTRICTS = [
+  'Araria',
+  'Arwal',
+  'Aurangabad',
+  'Banka',
+  'Begusarai',
+  'Bhagalpur',
+  'Bhojpur',
+  'Buxar',
+  'Darbhanga',
+  'East Champaran',
+  'Gaya',
+  'Gopalganj',
+  'Jamui',
+  'Jehanabad',
+  'Kaimur',
+  'Katihar',
+  'Khagaria',
+  'Kishanganj',
+  'Lakhisarai',
+  'Madhepura',
+  'Madhubani',
+  'Munger',
+  'Muzaffarpur',
+  'Nalanda',
+  'Nawada',
+  'Patna',
+  'Purnia',
+  'Rohtas',
+  'Saharsa',
+  'Samastipur',
+  'Saran',
+  'Sheikhpura',
+  'Sheohar',
+  'Sitamarhi',
+  'Siwan',
+  'Supaul',
+  'Vaishali',
+  'West Champaran',
+];
+
 export const Step1ProformaDetails: React.FC<StepProps> = ({
   data,
   updateData,
@@ -38,16 +118,37 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
 }) => {
   const cd = data.caseDetails;
 
-  const handleCaseDetailChange = (field: keyof typeof cd, value: any) => {
+  const handleCaseDetailChange = (field: keyof typeof cd, value: string | string[]) => {
     updateData((prev) => {
       const nextCd = { ...prev.caseDetails, [field]: value };
 
       // Auto update words when amount changes
-      if (field === 'totalConsideration') {
+      if (field === 'totalConsideration' && typeof value === 'string') {
         nextCd.totalConsiderationWords = convertNumberToIndianWords(value);
       }
-      if (field === 'claimedAmount') {
+      if (field === 'claimedAmount' && typeof value === 'string') {
         nextCd.claimedAmountWords = convertNumberToIndianWords(value);
+      }
+
+      // Auto sync limitation delay and condonation application if hasDelay changes
+      if (field === 'hasDelay') {
+        if (value === 'No') {
+          nextCd.limitationDelay = 'No delay. Complaint filed within the statutory limitation period of 2 years under Section 69 of Consumer Protection Act, 2019.';
+          nextCd.condonationApplicationAttached = 'N/A';
+        } else {
+          const daysText = nextCd.delayDays ? `${nextCd.delayDays} days` : 'specified period';
+          nextCd.limitationDelay = `Yes, delay of ${daysText}. Application for condonation of delay filed herewith under Section 69(2).`;
+          if (nextCd.condonationApplicationAttached === 'N/A') {
+            nextCd.condonationApplicationAttached = 'Yes';
+          }
+        }
+      }
+
+      // If delayDays changes while hasDelay is Yes
+      if (field === 'delayDays' && typeof value === 'string') {
+        if (nextCd.hasDelay === 'Yes') {
+          nextCd.limitationDelay = `Yes, delay of ${value || '____'} days. Application for condonation of delay filed herewith under Section 69(2).`;
+        }
       }
 
       return {
@@ -75,6 +176,8 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
       };
     });
   };
+
+  const isHousing = cd.category === 'Housing' || cd.hasHousingProject === 'Yes';
 
   return (
     <div className="space-y-6">
@@ -115,7 +218,7 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
               value={cd.commissionPlace}
               onChange={(e) => handleCaseDetailChange('commissionPlace', e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="e.g. PATNA or NEW DELHI"
+              placeholder="e.g. Muzaffarpur or PATNA"
             />
           </div>
 
@@ -141,7 +244,7 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
               value={cd.complaintYear}
               onChange={(e) => handleCaseDetailChange('complaintYear', e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="2024"
+              placeholder="2026"
             />
           </div>
         </div>
@@ -164,11 +267,17 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Case Category *
+              Case Category (Dropdown) *
             </label>
             <select
               value={cd.category}
-              onChange={(e) => handleCaseDetailChange('category', e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleCaseDetailChange('category', val);
+                if (val === 'Housing') {
+                  handleCaseDetailChange('hasHousingProject', 'Yes');
+                }
+              }}
               className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors bg-white ${
                 errors.category ? 'border-red-500 bg-red-50/30' : 'border-slate-300'
               }`}
@@ -218,36 +327,99 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
           </div>
         </div>
 
-        {/* Housing conditional fields */}
-        {cd.category === 'Housing' && (
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Housing / Real Estate Specific Details
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Housing / Land Project Details (Annotated: drop down N/A Yes) */}
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
+            <div>
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Housing / Real Estate Project Category (Row 5 & 6)
+              </h4>
+              <p className="text-[11px] text-slate-500">
+                Annotated in Proforma: Dropdown N/A / Yes for housing projects.
+              </p>
+            </div>
+            <div className="w-44 shrink-0">
+              <select
+                value={cd.hasHousingProject || (cd.category === 'Housing' ? 'Yes' : 'N/A')}
+                onChange={(e) => handleCaseDetailChange('hasHousingProject', e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 text-xs bg-white font-semibold"
+              >
+                <option value="N/A">N/A (Not Housing dispute)</option>
+                <option value="Yes">Yes (Housing / Land dispute)</option>
+              </select>
+            </div>
+          </div>
+
+          {isHousing && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
               <div>
-                <label className="block text-xs text-slate-600 mb-1">Project Name (Housing)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Project Name (Housing)
+                </label>
                 <input
                   type="text"
                   value={cd.projectName || ''}
                   onChange={(e) => handleCaseDetailChange('projectName', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white"
                   placeholder="e.g. Green Valley Residency, Tower C"
                 />
               </div>
+
               <div>
-                <label className="block text-xs text-slate-600 mb-1">Relief Nature (Refund/Possession/Interest)</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Page No. where mentioned
+                </label>
+                <input
+                  type="text"
+                  value={cd.projectMentionPage || ''}
+                  onChange={(e) => handleCaseDetailChange('projectMentionPage', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white"
+                  placeholder="e.g. Page 12 of Annexure-1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Relief Nature (Refund/Possession/Interest)
+                </label>
                 <input
                   type="text"
                   value={cd.refundOrPossession || ''}
                   onChange={(e) => handleCaseDetailChange('refundOrPossession', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white"
                   placeholder="Refund of principal with 12% interest"
                 />
               </div>
+
+              <div className="md:col-span-3">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Pending Housing Consumer Complaints in respect of same project (Row 8)
+                </label>
+                <input
+                  type="text"
+                  value={cd.pendingHousingComplaints || ''}
+                  onChange={(e) => handleCaseDetailChange('pendingHousingComplaints', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white"
+                  placeholder="N/A or details of pending complaint(s)"
+                />
+              </div>
             </div>
+          )}
+
+          {/* Row 9: Identical Question of Law */}
+          <div className="pt-2 border-t border-slate-200/60">
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Details of any pending/disposed of Consumer Complaint involving identical question of law (Row 9)
+            </label>
+            <input
+              type="text"
+              value={cd.pendingIdenticalLaw || 'None'}
+              onChange={(e) => handleCaseDetailChange('pendingIdenticalLaw', e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white"
+              placeholder="None (or case number and court details)"
+            />
           </div>
-        )}
+        </div>
       </div>
 
       {/* Consideration & Claim Valuation */}
@@ -333,7 +505,7 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
               value={cd.interestFromDate}
               onChange={(e) => handleCaseDetailChange('interestFromDate', e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="e.g. 15/04/2023 or Date of Death"
+              placeholder="e.g. Date of filing / 15/04/2023"
             />
           </div>
         </div>
@@ -346,64 +518,213 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
             <span className="w-6 h-6 rounded-full bg-slate-900 text-amber-400 text-xs font-bold flex items-center justify-center">
               4
             </span>
-            Cause of Action & Legal Limitation
+            Cause of Action & Legal Limitation (Rows 10–13)
           </h3>
           <p className="text-xs text-slate-500 mt-1">
-            Section 69 of CPA 2019 sets a 2-year limitation period from the date cause of action arose.
+            Section 69 of CPA 2019 sets a 2-year limitation period from the date cause of action arose. Annotated with State and District dropdowns.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Date of Cause of Action
+              Date of Cause of Action (Row 10)
             </label>
             <input
               type="text"
               value={cd.dateOfCauseOfAction}
               onChange={(e) => handleCaseDetailChange('dateOfCauseOfAction', e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="e.g. 14/09/2023"
+              placeholder="e.g. 14/09/2023 or 25/03/2026"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              State of Cause of Action
+              State of Cause of Action (Row 11 - Dropdown)
             </label>
-            <input
-              type="text"
+            <select
               value={cd.stateOfCauseOfAction}
               onChange={(e) => handleCaseDetailChange('stateOfCauseOfAction', e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="e.g. Bihar"
-            />
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors bg-white font-medium"
+            >
+              <option value="">Select State / UT</option>
+              {INDIAN_STATES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              District of Cause of Action
+              District of Cause of Action (Row 12 - Dropdown)
             </label>
-            <input
-              type="text"
-              value={cd.districtOfCauseOfAction}
-              onChange={(e) => handleCaseDetailChange('districtOfCauseOfAction', e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="e.g. Patna"
-            />
+            {cd.stateOfCauseOfAction === 'Bihar' ? (
+              <select
+                value={cd.districtOfCauseOfAction}
+                onChange={(e) => handleCaseDetailChange('districtOfCauseOfAction', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors bg-white font-medium"
+              >
+                <option value="">Select District</option>
+                {BIHAR_DISTRICTS.map((dst) => (
+                  <option key={dst} value={dst}>
+                    {dst}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={cd.districtOfCauseOfAction}
+                onChange={(e) => handleCaseDetailChange('districtOfCauseOfAction', e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
+                placeholder="e.g. Patna / Muzaffarpur / New Delhi"
+              />
+            )}
           </div>
 
-          <div className="md:col-span-3">
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Delay, if any, computing limitation period
+          {/* Row 13: Delay dropdown & No of days */}
+          <div className="md:col-span-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Delay, if any, computing period of limitation (Row 13)
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Annotated: Dropdown No delay / Yes (If Yes, specify number of days delay)
+                </p>
+              </div>
+
+              <div className="w-52 shrink-0">
+                <select
+                  value={cd.hasDelay || (cd.limitationDelay?.toLowerCase().includes('no delay') ? 'No' : 'Yes')}
+                  onChange={(e) => handleCaseDetailChange('hasDelay', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white font-semibold"
+                >
+                  <option value="No">No delay (Within 2 years)</option>
+                  <option value="Yes">Yes (Delay occurred)</option>
+                </select>
+              </div>
+            </div>
+
+            {cd.hasDelay === 'Yes' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Number of Days Delay
+                  </label>
+                  <input
+                    type="text"
+                    value={cd.delayDays || ''}
+                    onChange={(e) => handleCaseDetailChange('delayDays', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white font-mono"
+                    placeholder="e.g. 45 days or 3 months"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Condonation Application (Row 14)
+                  </label>
+                  <select
+                    value={cd.condonationApplicationAttached || 'Yes'}
+                    onChange={(e) => handleCaseDetailChange('condonationApplicationAttached', e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs bg-white"
+                  >
+                    <option value="Yes">Yes (Attached with Notarised affidavit)</option>
+                    <option value="No">No</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[11px] text-slate-500 mb-1">
+                Generated Limitation Text for Proforma:
+              </label>
+              <input
+                type="text"
+                value={cd.limitationDelay}
+                onChange={(e) => handleCaseDetailChange('limitationDelay', e.target.value)}
+                className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs bg-white"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Legal Proforma Declarations (Page 2 Rows 14–17) */}
+      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div className="border-b border-slate-100 pb-3">
+          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-slate-900 text-amber-400 text-xs font-bold flex items-center justify-center">
+              5
+            </span>
+            Proforma Declarations & Attestations (Page 2 Rows 14–17)
+          </h3>
+          <p className="text-xs text-slate-500 mt-1">
+            Standard statutory declarations annotated with dropdowns on Page 2 of Proforma.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Condonation Application (Row 14)
             </label>
-            <input
-              type="text"
-              value={cd.limitationDelay}
-              onChange={(e) => handleCaseDetailChange('limitationDelay', e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="No delay. Complaint filed within 2 years from date of cause of action under Sec 69."
-            />
+            <select
+              value={cd.condonationApplicationAttached || 'N/A'}
+              onChange={(e) => handleCaseDetailChange('condonationApplicationAttached', e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white font-medium"
+            >
+              <option value="N/A">N/A (By default if no delay)</option>
+              <option value="Yes">Yes (Attached with Notarised affidavit)</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Attested True Copies? (Row 15)
+            </label>
+            <select
+              value={cd.documentsAttestedTrueCopies || 'Yes'}
+              onChange={(e) => handleCaseDetailChange('documentsAttestedTrueCopies', e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white font-medium"
+            >
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              English Translations? (Row 16)
+            </label>
+            <select
+              value={cd.englishTranslationsFiled || 'N/A'}
+              onChange={(e) => handleCaseDetailChange('englishTranslationsFiled', e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white font-medium"
+            >
+              <option value="N/A">N/A (Not Applicable)</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Phone & Email Filed? (Row 17)
+            </label>
+            <select
+              value={cd.phoneEmailFiled || 'Yes'}
+              onChange={(e) => handleCaseDetailChange('phoneEmailFiled', e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white font-medium"
+            >
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
           </div>
         </div>
       </div>
@@ -413,9 +734,9 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
         <div className="border-b border-slate-100 pb-3">
           <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-slate-900 text-amber-400 text-xs font-bold flex items-center justify-center">
-              5
+              6
             </span>
-            Complainant's Advocate Details (Proforma Page 2)
+            Complainant&apos;s Advocate Details (Proforma Page 2)
           </h3>
           <p className="text-xs text-slate-500 mt-1">
             Counsel information appearing on the proforma verification and signatures.
@@ -432,7 +753,7 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
               value={cd.advocateName}
               onChange={(e) => handleCaseDetailChange('advocateName', e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="e.g. Rajesh Kumar Singh"
+              placeholder="e.g. AASHIF HUSSAIN or Subodh Kumar Jha"
             />
           </div>
 
@@ -458,7 +779,7 @@ export const Step1ProformaDetails: React.FC<StepProps> = ({
               value={cd.advocateAddress}
               onChange={(e) => handleCaseDetailChange('advocateAddress', e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 transition-colors"
-              placeholder="Chamber No. 44, Bar Association Building, Civil Court"
+              placeholder="Bar Association Building, Civil Court, Muzaffarpur"
             />
           </div>
         </div>
