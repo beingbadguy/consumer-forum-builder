@@ -2,13 +2,44 @@
 
 @layer base {
   :root {
-    --legal-font: 'EB Garamond', 'Times New Roman', Georgia, serif;
-    --sans-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --legal-font: 'EB Garamond', 'Noto Sans Devanagari', 'Times New Roman', Georgia, serif;
+    --sans-font: 'Inter', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --bg-page: #FFFFFF;
+    --bg-subtle: #F7F7F7;
+    --bg-card: #FFFFFF;
+    --border-subtle: #E5E5E5;
+    --border-strong: #111111;
+    --text-primary: #111111;
+    --text-secondary: #666666;
+    --text-muted: #888888;
+    --accent-black: #111111;
+  }
+
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+    font-family: var(--sans-font);
+  }
+
+  body {
+    background-color: #FFFFFF;
+    color: #111111;
+    font-family: var(--sans-font);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Selection style: clean monochrome */
+  ::selection {
+    background-color: #111111;
+    color: #FFFFFF;
   }
 
   /* Prevent unwanted iOS tap delay / highlight */
   * {
     -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
   }
 
   /* Prevent iOS zoom on input focus by ensuring 16px min font on mobile */
@@ -20,10 +51,21 @@
       font-size: 0.875rem; /* 14px */
     }
   }
+
+  /* Focus ring style */
+  :focus-visible {
+    outline: 2px solid #111111;
+    outline-offset: 1px;
+  }
 }
 
 .font-legal {
   font-family: var(--legal-font);
+}
+
+/* Subtle transitions */
+.transition-subtle {
+  transition: all 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -43,19 +85,30 @@
   background-color: #ffffff;
   box-sizing: border-box;
   margin: 0 auto 24px auto;
-  padding: 24mm 20mm 20mm 25mm; /* Left margin wider for filing thread/staple */
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 22mm 20mm 20mm 25mm; /* Left margin wider for filing thread/staple */
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
   position: relative;
   color: #000000;
   font-family: var(--legal-font);
-  font-size: 14pt;
-  line-height: 1.5;
-  border-radius: 4px;
+  font-size: 12pt;
+  line-height: 1.45;
+  border: 1px solid #E5E5E5;
+}
+
+/* Flexible Continuous Legal Petition Sheet (Pages 5-8 combined without artificial breaks) */
+.legal-petition-sheet {
+  min-height: 297mm;
+  height: auto;
+}
+
+.petition-avoid-break {
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 /* Screen wrapper for preview */
 .preview-viewport {
-  background: #cbd5e1;
+  background: #F2F2F2;
   min-height: 100vh;
 }
 
@@ -107,10 +160,23 @@
     min-height: 0 !important;
     height: auto !important;
     box-shadow: none !important;
+    border: none !important;
     margin: 0 !important;
     padding: 0 0 20px 0 !important;
     page-break-after: always;
     break-after: page;
+  }
+
+  .legal-petition-sheet {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .petition-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   .legal-a4-sheet:last-child {

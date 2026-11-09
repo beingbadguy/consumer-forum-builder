@@ -2,6 +2,12 @@
 
 import React from 'react';
 import { ComplaintFormData } from '../../types/complaint';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
+import { TRANSLATIONS } from '../../lib/translations';
 
 interface StepProps {
   data: ComplaintFormData;
@@ -14,6 +20,8 @@ export const Step7Affidavit: React.FC<StepProps> = ({
   updateData,
   errors,
 }) => {
+  const isEn = data.language === 'en';
+  const t = TRANSLATIONS[data.language || 'hi'].step7;
   const primaryComp = data.complainants[0] || { name: '' };
 
   const handleFieldChange = (field: keyof ComplaintFormData, value: string) => {
@@ -23,90 +31,90 @@ export const Step7Affidavit: React.FC<StepProps> = ({
     }));
   };
 
-  const handleResetToStandardAffidavit = () => {
-    const standard = `1. That I am the complainant in the accompanying consumer complaint and, being fully acquainted with the facts and circumstances of the case, I am competent to swear this affidavit.
-2. That I have read and understood the contents of the accompanying consumer complaint, and the statements made therein are true and correct to my personal knowledge, information and belief.
-3. That all the annexures annexed with the accompanying complaint are true Xerox copies of their respective originals and are relied upon in support of the present complaint.
-4. That the statements made in the accompanying complaint are true and correct, and nothing material has been concealed or suppressed therefrom.
-5. That this affidavit is being sworn for the purpose of supporting the accompanying consumer complaint and the documents annexed thereto before this Hon'ble Commission.`;
-
-    handleFieldChange('affidavit', standard);
-  };
-
   return (
     <div className="space-y-6">
-      <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+      <Card className="border-[#E5E5E5] bg-white">
+        <CardHeader className="border-b border-[#F0F0F0] pb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="w-5 h-5 rounded bg-[#111111] text-white text-[11px] font-medium flex items-center justify-center shrink-0">
+              7
+            </span>
+            <CardTitle className="text-sm sm:text-base font-semibold text-[#111111]">
+              {t.title}
+            </CardTitle>
+          </div>
+          <CardDescription className="mt-1 text-xs text-[#666666]">
+            {t.description}
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent className="space-y-5 pt-4">
+          {errors.affidavit && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 font-medium">
+              {errors.affidavit}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="deponentName" className="block text-xs font-medium text-[#222222] mb-1.5">
+                {t.deponent} <span className="text-[#888888] font-normal">({isEn ? 'Primary Complainant' : 'मुख्य परिवादी'})</span>
+              </Label>
+              <Input
+                id="deponentName"
+                type="text"
+                readOnly
+                value={primaryComp.name || (isEn ? 'Complainant Name' : 'परिवादी का नाम')}
+                className="bg-[#F5F5F5] text-[#111111] cursor-not-allowed border-[#E5E5E5] font-medium text-xs h-9"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="affidavitDate" className="block text-xs font-medium text-[#222222] mb-1.5">
+                {t.date}
+              </Label>
+              <DatePicker
+                id="affidavitDate"
+                value={data.affidavitDate || ''}
+                onChange={(val) => handleFieldChange('affidavitDate', val)}
+                placeholder={isEn ? 'Select date (DD/MM/YYYY)' : 'दिनांक चुनें (DD/MM/YYYY)'}
+              />
+            </div>
+          </div>
+
           <div>
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-slate-900 text-amber-400 text-xs font-bold flex items-center justify-center">
-                1
-              </span>
-              Affidavit in Support of Complaint (Matches Page 9 of PDF)
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Affidavit sworn by the Deponent on oath before the Oath Commissioner / Notary.
+            <Label htmlFor="affidavitClauses" className="block text-xs font-medium text-[#222222] mb-1.5">
+              {isEn ? 'Numbered Sworn Affirmation Paragraphs' : 'सशपथ कथन के बिंदुवार पैराग्राफ (Numbered Affirmation Paragraphs)'} <span className="text-red-600">*</span>
+            </Label>
+            <p className="text-[11px] text-[#666666] mb-2">
+              {isEn ? 'Standard 5 statutory affidavit clauses under Rule 14:' : 'मानक 5 कानूनी शपथ बिंदु जो न्यायालय में प्रस्तुत किए जाते हैं:'}
             </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleResetToStandardAffidavit}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-300 rounded-xl hover:bg-amber-100 transition-colors shadow-sm"
-          >
-            Reset to Standard 5 Clauses
-          </button>
-        </div>
-
-        {errors.affidavit && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-medium">
-            {errors.affidavit}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Deponent Name (Complainant)
-            </label>
-            <input
-              type="text"
-              readOnly
-              value={primaryComp.name || 'Complainant Name'}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-100 text-slate-700 cursor-not-allowed"
+            <Textarea
+              id="affidavitClauses"
+              rows={9}
+              value={data.affidavit}
+              onChange={(e) => handleFieldChange('affidavit', e.target.value)}
+              className={`font-sans leading-relaxed text-xs sm:text-sm p-4 bg-white border-[#E5E5E5] focus-visible:border-[#111111] ${
+                errors.affidavit ? 'border-red-500 bg-red-50/20' : ''
+              }`}
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Date of Solemn Affirmation
-            </label>
-            <input
-              type="date"
-              value={data.affidavitDate}
-              onChange={(e) => handleFieldChange('affidavitDate', e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white"
-            />
+          <div className="p-3.5 sm:p-4 bg-[#FAFAFA] rounded-xl border border-[#E5E5E5] text-xs text-[#666666] flex items-start gap-2.5">
+            <span className="text-[#111111] text-sm shrink-0 mt-0.5">ⓘ</span>
+            <div>
+              <span className="font-semibold text-[#111111] block mb-0.5">
+                {isEn ? 'Notary / Oath Commissioner Verification Space:' : 'नोटरी / ओथ कमिश्नर सत्यापन स्थान:'}
+              </span>
+              <p>
+                {isEn
+                  ? 'Space for Deponent signature, Advocate identification, and Notary seal/stamp is automatically provided on Page 9.'
+                  : 'न्यायालय प्रारूप के पृष्ठ 9 पर शपथकर्ता के हस्ताक्षर, पहचानकर्ता अधिवक्ता के हस्ताक्षर एवं नोटरी की मोहर हेतु स्थान स्वतः सुरक्षित रूप से बनाया गया है।'}
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-            Sworn Affirmation Statements (Numbered Paragraphs) *
-          </label>
-          <textarea
-            rows={8}
-            value={data.affidavit}
-            onChange={(e) => handleFieldChange('affidavit', e.target.value)}
-            className="w-full p-4 rounded-xl border border-slate-300 text-xs font-serif leading-relaxed bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600"
-            placeholder="1. That I am the complainant...&#10;2. That I have read and understood...&#10;3. That all annexures are true Xerox copies..."
-          />
-        </div>
-
-        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
-          Page 9 automatically formats the legal court header, Deponent details, solemn affirmation line, Deponent signature block, and Advocate Identification line.
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

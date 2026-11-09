@@ -25,12 +25,19 @@ export interface OppositeParty {
 export interface CaseDetails {
   commissionName: string; // e.g. "DISTRICT CONSUMER DISPUTE REDRESSAL COMMISSION"
   commissionPlace: string; // e.g. "NEW DELHI" or blank
-  complaintNo: string; // e.g. "_____ OF 2024"
-  complaintYear: string; // e.g. "2024"
+  commissionState?: string; // Selected State / UT for commission
+  commissionDistrict?: string; // Selected District for commission
+  complaintNo: string; // e.g. "_____ OF 2026"
+  complaintYear: string; // e.g. "2026"
   totalConsideration: string; // e.g. "25,00,000"
   totalConsiderationWords: string; // e.g. "Twenty Five Lakh"
   claimedAmount: string; // e.g. "25,00,000"
   claimedAmountWords: string; // e.g. "Twenty Five Lakh"
+  // Goods / Services Amount Breakdown (Website UI only)
+  valueOfGoods?: string;
+  considerationAmount?: string;
+  compensationAmount?: string;
+  litigationAmount?: string;
   interestRate: string; // e.g. "12"
   interestFromDate: string; // e.g. "15/04/2023"
   category: string; // e.g. "Insurance", "Housing", "Medical"
@@ -55,10 +62,13 @@ export interface CaseDetails {
   englishTranslationsFiled: string;
   phoneEmailFiled: string;
   // Advocate details
+  hasAdvocate?: string; // 'No' | 'Yes'
   advocateName: string;
   advocateAddress: string;
   advocatePhone: string;
   advocateEmail: string;
+  // Optional petition page count for Court Index
+  petitionPageCount?: number | string;
 }
 
 export interface EventEntry {
@@ -69,9 +79,11 @@ export interface EventEntry {
 export interface Annexure {
   annexureNo?: string; // e.g. "Annexure-1"
   title: string;
+  pageCount?: number | string; // Number of pages for this annexure (used dynamically in Index)
 }
 
 export interface ComplaintFormData {
+  language?: 'hi' | 'en';
   complainants: Complainant[];
   oppositeParties: OppositeParty[];
   caseDetails: CaseDetails;
@@ -90,7 +102,7 @@ export interface ComplaintFormData {
     litigationCosts?: string;
     litigationCostsWords?: string;
   };
-  verification: string;
+  verification: string; 
   verificationPlace: string;
   verificationDate: string;
   affidavit: string;

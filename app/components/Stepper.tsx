@@ -2,34 +2,47 @@
 
 import React, { useEffect, useRef } from 'react';
 import { FormStep } from '../types/complaint';
+import { AppLanguage } from '../lib/translations';
+import { Icons } from './ui/Icons';
 
 interface StepperProps {
   currentStep: FormStep;
   onStepClick: (step: FormStep) => void;
+  language?: AppLanguage;
 }
 
-const STEPS: { id: FormStep; title: string; subtitle: string; icon: string }[] = [
-  { id: 1, title: 'Proforma', subtitle: 'Commission & Fees', icon: '🏛️' },
-  { id: 2, title: 'Events', subtitle: 'Dates & Timeline', icon: '📅' },
-  { id: 3, title: 'Parties', subtitle: 'Complainant & O.Ps', icon: '👥' },
-  { id: 4, title: 'Complaint', subtitle: 'Showeth Grounds', icon: '📜' },
-  { id: 5, title: 'Prayer', subtitle: 'Reliefs Claimed', icon: '⚖️' },
-  { id: 6, title: 'Verification', subtitle: 'Declaration', icon: '✍️' },
-  { id: 7, title: 'Affidavit', subtitle: 'Sworn on Oath', icon: '🛡️' },
-  { id: 8, title: 'Annexures', subtitle: 'Documents', icon: '📎' },
+interface StepItem {
+  id: FormStep;
+  hiTitle: string;
+  hiSub: string;
+  enTitle: string;
+  enSub: string;
+}
+
+const STEPS: StepItem[] = [
+  { id: 1, hiTitle: 'बुनियादी परिवाद विवरण', hiSub: 'आयोग प्रपत्र एवं कोर्ट फीस', enTitle: 'Basic Complaint Details', enSub: 'Proforma & Valuation' },
+  { id: 2, hiTitle: 'प्रमुख तिथियां व घटनाक्रम', hiSub: 'कालानुक्रमिक विवरण', enTitle: 'Important Dates & Events', enSub: 'Chronological Sequence' },
+  { id: 3, hiTitle: 'आपका विवरण व विपक्षी', hiSub: 'पक्षकारों का ज्ञापन', enTitle: 'Your Details & Opposite Party', enSub: 'Memo of Parties' },
+  { id: 4, hiTitle: 'आपकी शिकायत की पूरी बात', hiSub: 'मामले के मुख्य तथ्य', enTitle: 'Your Complaint Story', enSub: 'Facts of the Case' },
+  { id: 5, hiTitle: 'आप कोर्ट से क्या चाहते हैं?', hiSub: 'प्रार्थना व दावा', enTitle: 'What Do You Want the Court to Do?', enSub: 'Prayer & Claims' },
+  { id: 6, hiTitle: 'सत्यता सत्यापन', hiSub: 'सत्यनिष्ठा घोषणा', enTitle: 'Truth Verification', enSub: 'Truth Declaration' },
+  { id: 7, hiTitle: 'शपथ पत्र घोषणा', hiSub: 'नियम 14 के तहत शपथ पत्र', enTitle: 'Declaration', enSub: 'Affidavit under Rule 14' },
+  { id: 8, hiTitle: 'सहायक दस्तावेज', hiSub: 'संलग्नक व साक्ष्य', enTitle: 'Supporting Documents', enSub: 'Annexures & Exhibits' },
 ];
 
 export const Stepper: React.FC<StepperProps> = ({
   currentStep,
   onStepClick,
+  language = 'hi',
 }) => {
+  const isEn = language === 'en';
   const progressPercent = Math.round((currentStep / 8) * 100);
-  const activePillRef = useRef<HTMLButtonElement | null>(null);
+  const activeTabRef = useRef<HTMLButtonElement | null>(null);
+  const activeStep = STEPS[currentStep - 1];
 
-  // Auto-scroll the active pill into view on mobile
   useEffect(() => {
-    if (activePillRef.current) {
-      activePillRef.current.scrollIntoView({
+    if (activeTabRef.current) {
+      activeTabRef.current.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
         inline: 'center',
@@ -38,82 +51,77 @@ export const Stepper: React.FC<StepperProps> = ({
   }, [currentStep]);
 
   return (
-    <div className="no-print bg-white border-b border-slate-200/80 sticky top-15 sm:top-16 z-30 shadow-xs">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5">
-        {/* Mobile & Desktop Header: Step Counter & Progress */}
-        <div className="flex items-center justify-between gap-2 mb-2 sm:mb-2.5">
-          <div className="flex items-center gap-2">
-            <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-900 text-amber-400 text-[10px] sm:text-xs font-bold flex items-center justify-center shrink-0">
+    <nav aria-label={isEn ? 'Step Progress' : 'प्रगति विवरण'} className="no-print bg-white border-b border-[#E5E5E5] sticky top-15 z-30">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-2.5">
+        {/* Step Header summary */}
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-5 h-5 rounded-full bg-[#111111] text-white text-[11px] font-medium flex items-center justify-center shrink-0">
               {currentStep}
             </span>
-            <div className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
-              {STEPS[currentStep - 1].title}:{' '}
-              <span className="font-medium text-slate-500 hidden sm:inline">
-                {STEPS[currentStep - 1].subtitle}
-              </span>
+            <div className="text-xs sm:text-sm font-medium text-[#111111] truncate">
+              {isEn ? `Step ${currentStep}: ` : `चरण ${currentStep}: `}
+              <span className="font-semibold text-[#111111]">{isEn ? activeStep.enTitle : activeStep.hiTitle}</span>
+              <span className="text-[#666666] font-normal hidden sm:inline"> — {isEn ? activeStep.enSub : activeStep.hiSub}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">
-              Step {currentStep} of 8
+          <div className="flex items-center gap-2.5 shrink-0 text-xs text-[#666666]">
+            <span className="hidden sm:inline">
+              {isEn ? `Step ${currentStep} of 8` : `चरण ${currentStep} / 8`}
             </span>
-            <span className="text-[11px] sm:text-xs font-bold font-mono text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200/80 shrink-0">
+            <span className="font-medium text-[#111111] bg-[#F5F5F5] border border-[#E5E5E5] px-2 py-0.5 rounded-md text-[11px]">
               {progressPercent}%
             </span>
           </div>
         </div>
 
-        {/* Progress bar line */}
-        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-2.5 sm:mb-3">
+        {/* Minimalist 2px Progress Bar */}
+        <div className="w-full bg-[#EFEFEF] h-1 rounded-full overflow-hidden mb-2">
           <div
-            className="bg-gradient-to-r from-amber-500 to-amber-600 h-full transition-all duration-300 rounded-full"
+            className="bg-[#111111] h-full transition-all duration-300 rounded-full"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
 
-        {/* Horizontal scrollable step strip on all screen sizes */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-1 px-1">
-          {STEPS.map((s) => {
-            const isActive = currentStep === s.id;
-            const isCompleted = currentStep > s.id;
+        {/* Horizontally Scrollable Step Navigation */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
+          {STEPS.map((step) => {
+            const isActive = currentStep === step.id;
+            const isCompleted = currentStep > step.id;
+            const stepTitle = isEn ? step.enTitle : step.hiTitle;
 
             return (
               <button
-                key={s.id}
-                ref={isActive ? activePillRef : null}
+                key={step.id}
+                ref={isActive ? activeTabRef : null}
                 type="button"
-                onClick={() => onStepClick(s.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 border active:scale-95 ${
+                onClick={() => onStepClick(step.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0 border cursor-pointer ${
                   isActive
-                    ? 'border-amber-500 bg-amber-50 text-slate-950 shadow-xs ring-1 ring-amber-500/30'
+                    ? 'border-[#111111] bg-[#111111] text-white'
                     : isCompleted
-                    ? 'border-slate-200/80 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                    : 'border-transparent text-slate-400 hover:bg-slate-50'
+                    ? 'border-[#E5E5E5] bg-[#FAFAFA] text-[#333333] hover:bg-[#F0F0F0]'
+                    : 'border-transparent text-[#777777] hover:text-[#111111] hover:bg-[#F5F5F5]'
                 }`}
               >
                 <span
-                  className={`w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center shrink-0 ${
+                  className={`w-4 h-4 rounded-full text-[10px] font-medium flex items-center justify-center shrink-0 ${
                     isActive
-                      ? 'bg-amber-600 text-white'
+                      ? 'bg-white text-[#111111]'
                       : isCompleted
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-slate-200 text-slate-600'
+                      ? 'bg-[#E5E5E5] text-[#111111]'
+                      : 'bg-[#F0F0F0] text-[#888888]'
                   }`}
                 >
-                  {isCompleted ? '✓' : s.id}
+                  {isCompleted ? <Icons.Check size={10} /> : step.id}
                 </span>
-
-                <span className="text-xs">{s.title}</span>
-
-                {isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse ml-0.5"></span>
-                )}
+                <span>{stepTitle}</span>
               </button>
             );
           })}
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
