@@ -43,18 +43,20 @@ export async function connectToDatabase(): Promise<typeof mongoose | null> {
 
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
-      .then((m) => {
+      .then(async (m) => {
+        cached.conn = m;
         cached.isFallback = false;
         console.log('[Database] Connected to MongoDB successfully.');
-        seedInitialAdmin();
+        await seedInitialAdmin();
         return m;
       })
-      .catch((err) => {
+      .catch(async (err) => {
         console.warn(
           `[Database] Notice: MongoDB connection to "${MONGODB_URI}" timed out or is unavailable (${err.message}). Activating resilient local database adapter.`
         );
         cached.isFallback = true;
         initFallbackStore();
+        await seedInitialAdmin();
         return null as unknown as typeof mongoose;
       });
   }
@@ -139,7 +141,7 @@ export async function seedInitialAdmin(): Promise<void> {
       }
     } else {
       // In fallback mode
-      initFallbackStore();
+      ensureDataDir();
       const users = readFallbackCollection('users');
       const existing = users.find((u: any) => u.email === adminEmail);
       if (!existing) {
@@ -173,6 +175,5 @@ function initFallbackStore() {
       fs.writeFileSync(f, JSON.stringify([], null, 2), 'utf-8');
     }
   });
-  seedInitialAdmin();
 }
 
